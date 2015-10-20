@@ -1,7 +1,7 @@
 <?php
 
 ##
-# © 2013 Partners HealthCare System, Inc. All Rights Reserved. 
+# © 2015 Partners HealthCare System, Inc. All Rights Reserved. 
 ##
 
 ##
@@ -246,7 +246,29 @@ foreach ($Data as $d_key_0 => $d_value_0) {
 ##
 #Render the PDF
 ##
-renderPDF($metadata, $acknowledgement, strip_tags(label_decode($app_title)), $user_rights['data_export_tool'], $Data);
+###renderPDF($metadata, $acknowledgement, strip_tags(label_decode($app_title)), $user_rights['data_export_tool'], $Data);
+if(substr($redcap_version,0,1)<6) {
+        renderPDF($metadata, $acknowledgement, strip_tags(label_decode($app_title)), $user_rights['data_export_tool'], $Data);
+}
+else {
+	// REDCap 6.0.x handles this funciton much differently than 6.5.x - if it's a plugin it simply returns the data in 6.5.x. 6.0.x gives the file as a download
+        if ( substr($redcap_version,0,1) == 6 && substr($redcap_version,2,1) == 0) {
+		// handle 6.0.x
+		renderPDF($metadata, $acknowledgement, strip_tags(label_decode($app_title)), $Data);
+	}
+	else {
+		// handle 6.5.x
+		$filename = "values_only_pid_".$project_id;
+		// Add timestamp if data in PDF
+		$filename .= date("_Y-m-d_Hi");
+
+		header('Content-Type: application/x-download');
+		header('Content-Disposition: attachment; filename="'.$filename.'.pdf"');
+		header('Cache-Control: private, max-age=0, must-revalidate');
+		header('Pragma: public');
+		echo renderPDF($metadata, $acknowledgement, strip_tags(label_decode($app_title)), $Data);
+	}
+}
 
 ##
 #Utility function to get the document name for a file field
